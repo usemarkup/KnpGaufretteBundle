@@ -6,10 +6,9 @@ use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\DefinitionDecorator;
-use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Phpseclib Sftp Adapter Factory
+ * PhpseclibSftp Adapter Factory
  */
 class PhpseclibSftpAdapterFactory implements AdapterFactoryInterface
 {
@@ -19,15 +18,16 @@ class PhpseclibSftpAdapterFactory implements AdapterFactoryInterface
     public function create(ContainerBuilder $container, $id, array $config)
     {
         $childDefinition = class_exists('\Symfony\Component\DependencyInjection\ChildDefinition')
-            ? new ChildDefinition('knp_gaufrette.adapter.phpseclib_sftp')
-            : new DefinitionDecorator('knp_gaufrette.adapter.phpseclib_sftp');
+            ? new ChildDefinition('knp_gaufrette.adapter.phpseclibsftp')
+            : new DefinitionDecorator('knp_gaufrette.adapter.phpseclibsftp');
 
         $container
             ->setDefinition($id, $childDefinition)
-            ->addArgument(new Reference($config['phpseclib_sftp_id']))
+            ->addArgument($config['host'])
             ->addArgument($config['directory'])
             ->addArgument($config['create'])
-        ;
+            ->addArgument($config['username'])
+            ->addArgument($config['password']);
     }
 
     /**
@@ -35,7 +35,7 @@ class PhpseclibSftpAdapterFactory implements AdapterFactoryInterface
      */
     public function getKey()
     {
-        return 'phpseclib_sftp';
+        return 'phpseclibsftp';
     }
 
     /**
@@ -45,8 +45,10 @@ class PhpseclibSftpAdapterFactory implements AdapterFactoryInterface
     {
         $builder
             ->children()
-                ->scalarNode('phpseclib_sftp_id')->isRequired()->end()
+                ->scalarNode('host')->isRequired()->end()
                 ->scalarNode('directory')->defaultNull()->end()
+                ->scalarNode('username')->defaultFalse()->end()
+                ->scalarNode('password')->defaultFalse()->end()
                 ->booleanNode('create')->defaultFalse()->end()
             ->end()
         ;
