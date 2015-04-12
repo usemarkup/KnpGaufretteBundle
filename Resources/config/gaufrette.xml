@@ -23,6 +23,8 @@
             <argument /><!-- Create -->
         </service>
         <service id="knp_gaufrette.adapter.amazon_s3" class="Gaufrette\Adapter\AmazonS3" abstract="true" public="false" />
+        <service id="knp_gaufrette.adapter.aws_s3" class="Gaufrette\Adapter\AwsS3" abstract="true" public="false" />
+        <service id="knp_gaufrette.adapter.doctrine_dbal" class="Gaufrette\Adapter\DoctrineDbal" abstract="true" public="false" />
         <service id="knp_gaufrette.adapter.acl_aware_amazon_s3" class="Gaufrette\Adapter\AclAwareAmazonS3" abstract="true" public="false" />
         <service id="knp_gaufrette.adapter.opencloud" class="Gaufrette\Adapter\OpenCloud" abstract="true" public="false">
             <argument /><!-- ObjectStore -->
@@ -30,6 +32,7 @@
             <argument /><!-- Create container -->
             <argument /><!-- Detect content type -->
         </service>
+        <service id="knp_gaufrette.adapter.azure_blob_storage" class="Gaufrette\Adapter\AzureBlobStorage" abstract="true" public="false" />
         <service id="knp_gaufrette.adapter.gridfs" class="Gaufrette\Adapter\GridFS" abstract="true" public="false" />
         <service id="knp_gaufrette.adapter.mogilefs" class="Gaufrette\Adapter\MogileFS" abstract="true" public="false">
             <argument /><!-- domain -->
@@ -46,7 +49,7 @@
         <service id="knp_gaufrette.filesystem_map" class="%knp_gaufrette.filesystem_map.class%">
             <argument /> <!-- map of filesystems -->
         </service>
+        <service id="knp_gaufrette.adapter.dropbox" class="Gaufrette\Adapter\Dropbox" abstract="true" public="false" />
     </services>
 
 </container>
-

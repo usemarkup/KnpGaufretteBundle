@@ -18,54 +18,15 @@ Installation
 
 As this bundle is an integration for Symfony of the [Gaufrette][gaufrette-homepage] library, it requires you to first install [Gaufrette][gaufrette-homepage] in a Symfony project.
 
-## Download the bundle
+## With composer
 
-You can download an archive of the bundle and unpack it in the `vendor/bundles/Knp/Bundle/GaufretteBundle` directory of your application.
+This bundle can be installed using [composer](http://getcomposer.org) by adding the following in the `require` section of your `composer.json` file:
 
-### Standard Edition Style
-
-If you are using the `deps` file to manage your project's dependencies,
-you must add the following lines to it:
-
-    [gaufrette]
-        git=http://github.com/KnpLabs/Gaufrette.git
-
-    [KnpGaufretteBundle]
-        git=http://github.com/KnpLabs/KnpGaufretteBundle.git
-        target=/bundles/Knp/Bundle/GaufretteBundle
-
-### Composer Style
-
-This bundle can be installed using composer by adding the following in the `require` section of your `composer.json` file:
-
-```
+``` json
     "require": {
         ...
-        "knplabs/knp-gaufrette-bundle": "dev-master"
+        "knplabs/knp-gaufrette-bundle": "*@dev"
     },
-```    
-
-### Git Submodule Style
-
-If you are versioning your project with git and making changes to this bundle you can embed it as a submodule:
-
-    $ git submodule add https://github.com/KnpLabs/KnpGaufretteBundle.git vendor/bundles/Knp/Bundle/GaufretteBundle
-
-## Add the namespace in the autoloader 
-
-You must register both Gaufrette and the KnpGaufretteBundle in your autoloader:
-(You do not have to do this if you are using the composer autoload system.)
-
-``` php
-<?php
-
-// app/autoload.php
-
-$loader->registerNamespaces(array(
-    'Knp\Bundle'                => __DIR__.'/../vendor/bundles',
-    'Gaufrette'                 => __DIR__.'/../vendor/gaufrette/src',
-    // ...
-));
 ```
 
 ## Register the bundle
@@ -228,6 +189,45 @@ knp_gaufrette:
                         content:    Some content
                         checksum:   abc1efg2hij3
                         mtime:      123456890123
+```
+
+## Azure Blob Storage (azure\_blob\_storage)
+
+Adapter for Microsoft Azure Blob Storage service. To use this adapter you need to install the
+[Azure SDK for php](http://www.windowsazure.com/en-us/develop/php/common-tasks/download-php-sdk/) into your project.
+
+Further more you need a valid *connection string* and you must define a Blob Proxy factory service with it. You can use
+the default `\Gaufrette\Adapter\AzureBlobStorage\BlobProxyFactory` this way:
+
+``` yaml
+# app/config/config.yml
+services:
+    azure_blob_proxy_factory:
+        class: Gaufrette\Adapter\AzureBlobStorage\BlobProxyFactory
+        arguments: [%azure_blob_storage_connection_string%]
+```
+
+You must set the parameter `azure_blob_storage_connection_string` to contain your windows azure blob storage connection
+string. You can retrieve your connection string in your [Windows Azure management console](https://manage.windowsazure.com).
+
+### Parameters
+
+ * `blob_proxy_factory_id` Reference to the blob proxy factory service
+ * `container_name` The name of the container
+ * `create_container` Boolean value that indicates whether to create the container if it does not exists (*optional*: default *false*)
+ * `detect_content_type` Boolean value that indicates whether to auto determinate and set the content type on new blobs (*optional*: default *true*)
+
+### Example
+
+``` yaml
+# app/config/config.yml
+knp_gaufrette:
+    adapters:
+        foo:
+            azure_blob_storage:
+                blob_proxy_factory_id: azure_blob_proxy_factory
+                container_name: my_container
+                create_container: true
 ```
 
 ## GridFS (gridfs)
@@ -411,8 +411,6 @@ This adapter requires the use of amazonwebservices/aws-sdk-for-php which can be 
     },
 ```
 
-Note that Gaufrette is not currently compatible with the v2 Amazon SDK (called "aws/aws-sdk-php").
-
 ### Parameters
 
  * `amazon_s3_id`: the id of the AmazonS3 service used for the underlying connection
@@ -424,7 +422,7 @@ Note that Gaufrette is not currently compatible with the v2 Amazon SDK (called "
 
 ### Defining services
 
-To use the Amazon S3 adapter you need to provide a valid `AmazonS3` instance (as defined in the Amazon SDK). This can 
+To use the Amazon S3 adapter you need to provide a valid `AmazonS3` instance (as defined in the Amazon SDK). This can
 easily be set up as using Symfony's service configuration:
 
 ``` yaml
@@ -436,7 +434,7 @@ services:
             options:
                 key:      '%aws_key%'
                 secret:   '%aws_secret_key%'
-```   
+```
 
 ### Example
 
@@ -456,6 +454,52 @@ knp_gaufrette:
 
 Note that the SDK seems to have some issues with bucket names with dots in them, e.g. "com.mycompany.bucket" seems to have issues but "com-mycompany-bucket" works.
 
+## AwsS3
+
+Adapter for Amazon S3 SDK v2.
+
+### Parameters
+
+ * `service_id` The service id of the `Aws\S3\S3Client` to use. *(required)*
+ * `bucket_name` The name of the S3 bucket to use. *(required)*
+ * `options` A list of additional options passed to the adapter.
+   * `create` Whether to create the bucket if it doesn't exist. *(default false)*
+   * `directory` A directory to operate in. *(default '')*
+   This directory will be created in the root of the bucket and all files will be read and written there.
+
+### Defining services
+
+An example service definition of the `Aws\S3\S3Client`:
+
+```yaml
+services:
+    acme.aws_s3.client:
+        class: Aws\S3\S3Client
+        factory_class: Aws\S3\S3Client
+        factory_method: 'factory'
+        arguments:
+            -
+                key: %amazon_s3.key%
+                secret: %amazon_s3.secret%
+                region: %amazon_s3.region%
+```
+
+### Example
+
+Once the service is set up use its key as the `service_id` in the gaufrette configuration:
+
+``` yaml
+# app/config/config.yml
+knp_gaufrette:
+    adapters:
+        profile_photos:
+            aws_s3:
+                service_id: 'acme.aws_s3.client'
+                bucket_name: 'images'
+                options:
+                    directory: 'profile_photos'
+```
+
 ## Open Cloud (opencloud)
 
 Adapter for OpenCloud (Rackspace)
@@ -466,11 +510,11 @@ Adapter for OpenCloud (Rackspace)
  * `container_name`: the name of the container to use
  * `create_container`: if `true` will create the container if it doesn't exist *(default `false`)*
  * `detect_content_type`: if `true` will detect the content type for each file *(default `true`)*
- 
+
 ### Defining services
 
 To use the OpenCloud adapter you should provide a valid `ObjectStore` instance. You can retrieve an instance through the
-`OpenCloud\OpenStack` or `OpenCloud\Rackspace` instances. We can provide a comprehensive configuration through the Symfony 
+`OpenCloud\OpenStack` or `OpenCloud\Rackspace` instances. We can provide a comprehensive configuration through the Symfony
 DIC configuration.
 
 #### Define OpenStack/Rackspace service
@@ -524,7 +568,7 @@ services:
         factory_service: opencloud.connection.hpcloud
         factory_method: ObjectStore
         arguments:
-          - 'Object Storage' # Object storage type 
+          - 'Object Storage' # Object storage type
           - 'region-a.geo-1' # Object storage region
           - 'publicURL' # url type
 ```
@@ -539,7 +583,7 @@ services:
         factory_service: opencloud.connection
         factory_method: ObjectStore
         arguments:
-          - 'cloudFiles' # Object storage type 
+          - 'cloudFiles' # Object storage type
           - 'DFW' # Object storage region
           - 'publicURL' # url type
 ```
@@ -599,14 +643,14 @@ knp_gaufrette:
 
 ## Stream Wrapper
 
-The `stream_wrapper` settings allow you to register filesystems with a specified domain and 
+The `stream_wrapper` settings allow you to register filesystems with a specified domain and
 then use as a stream wrapper anywhere in your code like:
 `gaufrette://domain/file.txt`
 
 ### Parameters
 
  * `protocol` The protocol name like `gaufrette://…` *(default gaufrette)*
- * `filesystem` An array that contains filesystems that you want to register to this stream_wrapper. 
+ * `filesystem` An array that contains filesystems that you want to register to this stream_wrapper.
  If you set array keys these will be used as an alias for the filesystem (see examples below) *(default all filesystems without aliases)*
 
 ### Example 1
@@ -694,6 +738,78 @@ knp_gaufrette:
 ```
 data://backup/...
 data://pictures/...
+```
+
+## Doctrine DBAL (doctrine_dbal)
+
+Adapter that allows you to store data into a database.
+
+### Parameters
+
+ * `connection_name` The doctrine dbal connection name like `default`
+ * `table` The table name like `media_data`
+ * `key`: The primary key in the table
+ * `content`: The field name of the file content
+ * `mtime`: The field name of the timestamp
+ * `checksum`: The field name of the checksum
+
+### Example
+
+``` yaml
+# app/config/config.yml
+knp_gaufrette:
+    adapters:
+        database:
+            doctrine_dbal:
+                connection_name: default
+                table: data
+                columns:
+                    key: id
+                    content: text
+                    mtime: date
+                    checksum: checksum
+```
+
+## Dropbox (dropbox)
+
+Adapter for Dropbox.
+
+### Parameters
+
+ * `api_id` The id of the service that provides Dropbox API access.
+
+### Example
+
+> In order to get a Dropbox token and token_secret, you need to add a new Dropbox App in your account, and then you'll need to go through the oAuth authorization process
+
+``` yaml
+# app/config/config.yml
+knp_gaufrette:
+    adapters:
+        foo:
+            dropbox:
+                api_id: acme_test.dropbox.api
+```
+
+In your AcmeTestBundle, add following service definitions:
+
+``` yaml
+# src/Acme/TestBundle/Resources/config/services.yml
+parameters:
+    acme_test.dropbox.key: my_consumer_key
+    acme_test.dropbox.secret: my_consumer_secret
+    acme_test.dropbox.token: some_token
+    acme_test.dropbox.token_secret: some_token_secret
+
+services:
+    acme_test.dropbox.oauth:
+        class: Dropbox_OAuth_Curl
+        arguments: [%acme_test.dropbox.key%, %acme_test.dropbox.secret%]
+        calls:
+            - [setToken, ["%acme_test.dropbox.token%", "%acme_test.dropbox.token_secret%"]]
+    acme_test.dropbox.api:
+        class: Dropbox_API
+        arguments: [@acme_test.dropbox.oauth, "sandbox"]
 ```
 
 [gaufrette-homepage]: https://github.com/KnpLabs/Gaufrette
