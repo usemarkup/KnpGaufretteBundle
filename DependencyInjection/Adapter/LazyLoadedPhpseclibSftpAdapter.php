@@ -82,7 +82,7 @@ class LazyLoadedPhpseclibSftpAdapter implements Adapter, FileFactory, ListKeysAw
 
     public function rename($sourceKey, $targetKey)
     {
-        return $this->getAdapter()->rename($key);
+        return $this->getAdapter()->rename($sourceKey, $targetKey);
     }
 
     public function isDirectory($key)
