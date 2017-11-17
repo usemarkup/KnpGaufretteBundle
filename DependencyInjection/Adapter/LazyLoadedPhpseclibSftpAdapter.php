@@ -1,6 +1,7 @@
 <?php
 
 namespace Knp\Bundle\GaufretteBundle\DependencyInjection\Adapter;
+
 use Gaufrette\Adapter;
 use Gaufrette\Filesystem;
 use Gaufrette\Adapter\PhpseclibSftp;
